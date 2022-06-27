@@ -1,4 +1,4 @@
-#include "encode_xor.h"
+#include "bitwise_xor.h"
 
 #include <algorithm>
 
@@ -17,7 +17,7 @@ struct Xor {
 } // namespace
 
 
-std::string encode_xor(const std::string& key, const std::string& string)
+std::string bitwise_xor(const std::string& key, const std::string& string)
 {
     std::basic_string<uint8_t> string_bytes = hex::decode(string);
     std::basic_string<uint8_t> key_bytes = hex::decode(key);

@@ -1,4 +1,4 @@
-#include "encode_xor.h"
+#include "bitwise_xor.h"
 
 #include <iostream>
 
@@ -22,7 +22,7 @@ int main(int argc, char *argv[]) {
     std::cout << "\nbitwise xor-ing message against key...\n" << std::endl;
 
     std::cout << "Result: "
-              << bytes::encode_xor(key, string) << std::endl;
+              << bytes::bitwise_xor(key, string) << std::endl;
 
     return 0;
 }
