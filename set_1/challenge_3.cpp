@@ -19,13 +19,10 @@
 #include "bytes.h"
 #include "bitwise_xor.h"
 #include "english_text_metric.h"
+#include "histogram.h"
 
-#include <algorithm>
-#include <cmath>
 #include <fstream>
-#include <sstream>
 #include <iostream>
-#include <iterator>
 #include <limits>
 #include <vector>
 
@@ -66,7 +63,7 @@ int main(int argc, char *argv[]) {
 
       double cost = bytes::metrics::english_text_cost(dec);
 
-      // Debug
+      // For histogram
       if (cost < 1000.0)
         costs.push_back(std::make_pair(k, cost));
 
@@ -78,58 +75,8 @@ int main(int argc, char *argv[]) {
       }
     }
 
-    size_t min_col = 0;
-    double min_cost = std::numeric_limits<double>::max();
-    double max_cost = std::numeric_limits<double>::min();
-
-    size_t col = 0;
-    for (const auto& [k, c] : costs) {
-      if (c < min_cost) {
-        min_cost = c;
-        min_col = col;
-      }
-      else if (c > max_cost) {
-        max_cost = c;
-      }
-      ++col;
-    }
-
-    // Normalize costs
-    const int max_height = 60;
-    std::transform(costs.begin(), costs.end(), costs.begin(), [m=min_cost, M=max_cost](const auto& kc){
-      return std::make_pair(kc.first, (1.0 + (kc.second - m) / (M - m)) * (max_height / 2));
-    });
-
-    std::cout << std::endl;
-
-    for (size_t y = 0; y < max_height; ++y) {
-      for (size_t x = 0; x < costs.size(); ++x) {
-        std::cout << ' ';
-        size_t x_space = max_height - costs[x].second;
-        if (y < x_space) {
-          std::cout << " ";
-        }
-        else {
-          std::cout << (x == min_col ? "\033[1m" : "") << "|" << "\033[0m";
-        }
-        std::cout << "  ";
-      }
-      std::cout << '\n';
-    }
-
-    std::fill_n(std::ostream_iterator<char>(std::cout), costs.size() * 5, ' ');
-    std::cout << '\n';
-
-    for (size_t x = 0; x < costs.size(); ++x) {
-      int key = (unsigned)costs[x].first;
-      double logkey = std::log10(key);
-      std::cout << ' '
-                << (x == min_col ? "\033[1m" : "")
-                << key << "\033[0m"
-                << (1 < logkey && logkey < 3 ? " " : "");
-    }
-
-    std::cout << std::endl;
+    // Vizualize the costs
+    bytes::utils::show_histogram(costs);
 
     // Output best result
     std::cout << "\nBest key: " << (unsigned)best_key << std::endl;

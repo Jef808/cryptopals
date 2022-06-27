@@ -15,3 +15,5 @@ add_library(cryptopals::bytes ALIAS
   set_1_bytes)
 add_library(cryptopals::text_metrics ALIAS
   set_1_text_metrics)
+add_library(cryptopals::utils ALIAS
+  set_1_utils)

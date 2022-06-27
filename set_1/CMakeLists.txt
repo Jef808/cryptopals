@@ -19,6 +19,12 @@ add_library(set_1_text_metrics STATIC
 target_include_directories(set_1_text_metrics PUBLIC
   ${CMAKE_CURRENT_SOURCE_DIR}/src)
 
+add_library(set_1_utils STATIC
+  src/histogram.h
+  src/histogram.cpp
+  )
+target_include_directories(set_1_utils PUBLIC
+  ${CMAKE_CURRENT_SOURCE_DIR}/src)
 
 # Challenges
 add_executable(challenge_1
@@ -35,4 +41,5 @@ add_executable(challenge_3
   challenge_3.cpp)
 target_link_libraries(challenge_3
   set_1_bytes
-  set_1_text_metrics)
+  set_1_text_metrics
+  set_1_utils)
