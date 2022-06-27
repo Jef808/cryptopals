@@ -1,3 +1,6 @@
+#ifndef BYTES_H_
+#define BYTES_H_
+
 #include "hex.h"
 #include "base64.h"
 
@@ -15,3 +18,6 @@ inline std::string base64_2_hex(const std::string& string) {
 }
 
 } // namespace bytes
+
+
+#endif // BYTES_H_

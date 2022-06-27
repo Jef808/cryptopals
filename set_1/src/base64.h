@@ -18,6 +18,9 @@
  * To enforce base64 packets of 4 digits, the extra character '='
  * is used for padding.
  */
+#ifndef BASE64_H_
+#define BASE64_H_
+
 #include <cstdint>
 #include <string>
 
@@ -54,3 +57,6 @@ inline std::basic_string<uint8_t> decode(const std::string& string) {
 
 
 } // namespace bytes::base64
+
+
+#endif // BASE64_H_

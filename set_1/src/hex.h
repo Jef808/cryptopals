@@ -12,6 +12,8 @@
  * Since hex is a 4-bit encoding, we consider packets of 2 hex digits
  * corresponding to exactly one byte and vice-versa.
  */
+#ifndef HEX_H_
+#define HEX_H_
 
 #include <cstdint>
 #include <string>
@@ -49,3 +51,6 @@ inline std::basic_string<uint8_t> decode(const std::string& string) {
 
 
 } // namespace bytes::hex
+
+
+#endif // HEX_H_

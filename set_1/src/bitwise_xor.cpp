@@ -8,29 +8,40 @@ namespace {
 
 
 struct Xor {
-  const uint8_t operator()(const uint8_t a, const uint8_t b) {
-    return a ^ b;
+  Xor(const uint8_t* key, const size_t key_len)
+    : m_key{key}
+    , m_key_len{key_len}
+    , m_key_ndx{0}
+  {}
+
+  uint8_t operator()(const uint8_t b) const
+  {
+    return b ^ m_key[m_key_ndx++ % m_key_len];
   }
+
+  const uint8_t* m_key;
+  const size_t m_key_len;
+  mutable size_t m_key_ndx;
 };
 
 
 } // namespace
 
 
-std::string bitwise_xor(const std::string& key, const std::string& string)
+std::basic_string<uint8_t>
+bitwise_xor(const uint8_t* key,    const size_t key_len,
+            const uint8_t* string, const size_t string_len)
 {
-    std::basic_string<uint8_t> string_bytes = hex::decode(string);
-    std::basic_string<uint8_t> key_bytes = hex::decode(key);
-    std::basic_string<uint8_t> ret_bytes;
-    ret_bytes.reserve(std::min(key_bytes.size(), string_bytes.size()));
+  std::basic_string<uint8_t> ret;
+  ret.reserve(string_len);
 
-    std::transform(string_bytes.begin(),
-                   std::min(string_bytes.end(), string_bytes.begin() + key_bytes.size()),
-                   key_bytes.begin(),
-                   std::back_inserter(ret_bytes),
-                   Xor{});
+  const Xor unary_xor(key, key_len);
 
-    return hex::encode(ret_bytes);
+  std::transform(string,
+                 string + string_len,
+                 std::back_inserter(ret),
+                 unary_xor);
+  return ret;
 }
 
 
