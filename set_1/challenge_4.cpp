@@ -1,3 +1,12 @@
+/**
+ * We construct a functional measuring the distance between raw
+ * byte strings modulo bijections on the space of bytes.
+ *
+ * By using character frequency statistics collected from
+ * real-world texts (the Harry Potter novels), the resulting functional
+ * is able to detect binary data consisting of English language
+ * messages encoded via a frequency-preserving scheme.
+ */
 #include "bytes.h"
 #include "bitwise_xor.h"
 #include "data_analysis/load_character_frequencies.h"
@@ -132,7 +141,11 @@ struct L2_Frequency_functional {
   std::array<double, 256> m_FreqOrd;
 };
 
-
+/**
+ * Given a model frequency distribution and a collection of
+ * raw byte strings, output the result of applying the
+ * above @L2_Frequency_functional to all of them.
+ */
 template< typename OutputIterator >
 void compute_rankings(
   const std::array<double, 256>& ExpectedFreq,
@@ -168,9 +181,7 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  std::cerr << "Successfully loaded the input file" << std::endl;
-
-  // Character frequencies from Harry Potter books
+  // Expected character frequencies for English language messages.
   std::array<double, 256> Freq;
   Freq.fill(0.0);
   bool okay = data::load_character_frequencies(Freq);
@@ -180,14 +191,20 @@ int main(int argc, char *argv[]) {
     return EXIT_FAILURE;
   }
 
+  // Compute the distances between frequency distributions up to
+  // bijections on the space of characters.
   std::vector<double> Scores;
   compute_rankings(Freq, Ss, std::back_inserter(Scores));
 
+  // The lower that distance, the more likely the string is single-byte xor'ed
+  // encoded English text.
   size_t Cand = std::distance(Scores.begin(), std::min_element(Scores.begin(), Scores.end()));
 
   std::array<double, 256> CandFreq;
   get_frequency_distribution(Ss[Cand], CandFreq);
 
+  // The rigidity of the encoding lets us decipher the string by only matching
+  // one character with its preimage.
   uint8_t CandSPC = std::distance(CandFreq.begin(), std::max_element(CandFreq.begin(), CandFreq.end()));
   uint8_t CandKey = CandSPC ^ 0x20;
 
@@ -195,7 +212,9 @@ int main(int argc, char *argv[]) {
   std::basic_string<uint8_t> SDecoded =
     bytes::bitwise_xor(&CandKey, 1, &Ss[Cand][0], Ss[Cand].size());
 
-
+  // We could measure here the distance between the decoded string's character frequency
+  // in a way that is NOT invariant modulo bijections in order to programatically
+  // detect success.
   std::cout << "Found: " << Cand << " -- " << bytes::hex::encode(Ss[Cand])
             << "\nWith key " << (unsigned)CandKey
             << " which decodes to \n  " << SDecoded << std::endl;
