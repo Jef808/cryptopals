@@ -97,5 +97,11 @@ double english_text_cost(const std::basic_string<uint8_t>& bytes) {
   return cost_char_penalty + cost_letter_freq + cost_word_len;;
 }
 
+bool is_all_printable(const std::basic_string<uint8_t>& bytes) {
+  return std::all_of(bytes.begin(), bytes.end(), [](auto b) {
+    return std::isprint(b) || b == 10;
+  });
+}
+
 
 } // namespace bytes::metrics

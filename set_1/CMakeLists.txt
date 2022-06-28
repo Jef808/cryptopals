@@ -1,3 +1,4 @@
+
 # Set 1 exports
 add_library(set_1_bytes STATIC
   src/bytes.h
@@ -19,12 +20,6 @@ add_library(set_1_text_metrics STATIC
 target_include_directories(set_1_text_metrics PUBLIC
   ${CMAKE_CURRENT_SOURCE_DIR}/src)
 
-add_library(set_1_utils STATIC
-  src/histogram.h
-  src/histogram.cpp
-  )
-target_include_directories(set_1_utils PUBLIC
-  ${CMAKE_CURRENT_SOURCE_DIR}/src)
 
 # Challenges
 add_executable(challenge_1
@@ -42,4 +37,13 @@ add_executable(challenge_3
 target_link_libraries(challenge_3
   set_1_bytes
   set_1_text_metrics
-  set_1_utils)
+  cryptopals::data_utils
+  cryptopals::statistics)
+
+add_executable(challenge_4
+  challenge_4.cpp)
+target_link_libraries(challenge_4 PUBLIC
+  set_1_bytes
+  set_1_text_metrics
+  cryptopals::data_utils
+  cryptopals::statistics)

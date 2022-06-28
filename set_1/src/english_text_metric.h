@@ -17,6 +17,7 @@ namespace bytes::metrics {
 double english_text_cost(const std::basic_string<uint8_t>& /* Input string */);
 
 
+bool is_all_printable(const std::basic_string<uint8_t>& /* Input string */);
 
 } // namespace bytes::metrics
 

@@ -35,6 +35,14 @@ inline std::string bitwise_xor(const std::string& key, const std::string& msg) {
           &hex::decode(msg)[0], size_t((msg.size() + 1) / 2)));
 }
 
+/**
+ * Perform bitwise xor but simply check all resulting characters are
+ * printable.
+ */
+bool get_all_printable(const std::basic_string<uint8_t>& /* Input string to decode */,
+                       const uint8_t* /* Key */,
+                       const size_t /* Key lenght */);
+
 } //  namespace bytes
 
 

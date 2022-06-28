@@ -44,5 +44,15 @@ bitwise_xor(const uint8_t* key,    const size_t key_len,
   return ret;
 }
 
+bool get_all_printable(const std::basic_string<uint8_t>& bytes,
+                       const uint8_t* key,
+                       const size_t len) {
+  return std::all_of(bytes.begin(), bytes.end(), [&](const auto& b){
+    auto n = static_cast<int>(&b - &bytes[0]) % len;
+    return std::isprint(b ^ key[n]);
+    //return std::isprint(b ^ key[std::distance(&bytes[0], &b) % len]);
+  });
+}
+
 
 } // namespace bytes

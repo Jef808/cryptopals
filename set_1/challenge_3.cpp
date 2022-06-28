@@ -19,7 +19,7 @@
 #include "bytes.h"
 #include "bitwise_xor.h"
 #include "english_text_metric.h"
-#include "histogram.h"
+#include "data_analysis/histogram.h"
 
 #include <fstream>
 #include <iostream>
@@ -76,7 +76,7 @@ int main(int argc, char *argv[]) {
     }
 
     // Vizualize the costs
-    bytes::utils::show_histogram(costs);
+    bytes::utils::show_table(costs, "Key ", "Cost");
 
     // Output best result
     std::cout << "\nBest key: " << (unsigned)best_key << std::endl;
