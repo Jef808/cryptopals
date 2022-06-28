@@ -47,3 +47,8 @@ target_link_libraries(challenge_4 PUBLIC
   set_1_text_metrics
   cryptopals::data_utils
   cryptopals::statistics)
+
+add_executable(challenge_5
+  challenge_5.cpp)
+target_link_libraries(challenge_5
+  set_1_bytes)
