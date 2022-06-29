@@ -8,7 +8,6 @@
 
 namespace data {
 
-
 /**
  * Helper struct to read and collect statistics on text.
  */
@@ -31,7 +30,6 @@ struct CharFreq {
   /** Number of characters collected to date */
   size_t n_chars;
 };
-
 
 } // namespace data
 

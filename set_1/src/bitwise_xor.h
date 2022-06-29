@@ -36,12 +36,21 @@ inline std::string bitwise_xor(const std::string& key, const std::string& msg) {
 }
 
 /**
- * Perform bitwise xor but simply check all resulting characters are
- * printable.
+ * Use character frequency statistics to find the
+ * single-character key used to encode a piece of
+ * English language text using bitwise xor.
+ *
+ * @Note  The algorithm relies on the decoded message
+ * to have standard English synthax.
+ *
+ * @Param  Stride is the amount of bytes by which we must
+ * advance when traversing the string. Used when breaking
+ * repeating-key xor.
  */
-bool get_all_printable(const std::basic_string<uint8_t>& /* Input string to decode */,
-                       const uint8_t* /* Key */,
-                       const size_t /* Key lenght */);
+std::pair<uint8_t, bool>
+break_single_byte_xor(const uint8_t* /* Input string */,
+                      const size_t   /* Input length */,
+                      const size_t   /* Stride */ = 1);
 
 } //  namespace bytes
 

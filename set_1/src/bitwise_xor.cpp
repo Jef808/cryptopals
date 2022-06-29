@@ -1,6 +1,11 @@
 #include "bitwise_xor.h"
+#include "metrics.h"
+#include "character_frequency.h"
+#include "data_analysis/load_character_frequencies.h"
 
 #include <algorithm>
+#include <limits>
+#include <iostream>
 
 namespace bytes {
 
@@ -24,7 +29,6 @@ struct Xor {
   mutable size_t m_key_ndx;
 };
 
-
 } // namespace
 
 
@@ -44,14 +48,41 @@ bitwise_xor(const uint8_t* key,    const size_t key_len,
   return ret;
 }
 
-bool get_all_printable(const std::basic_string<uint8_t>& bytes,
-                       const uint8_t* key,
-                       const size_t len) {
-  return std::all_of(bytes.begin(), bytes.end(), [&](const auto& b){
-    auto n = static_cast<int>(&b - &bytes[0]) % len;
-    return std::isprint(b ^ key[n]);
-    //return std::isprint(b ^ key[std::distance(&bytes[0], &b) % len]);
-  });
+
+std::pair<uint8_t, bool>
+break_single_byte_xor(
+  const uint8_t* enc, const size_t len, const size_t stride)
+{
+  std::array<double, 256> Freq;
+  bool okay = data::load_character_frequencies(Freq);
+
+  if (not okay) {
+    return std::make_pair(0, false);
+  }
+
+  uint8_t best_key = 0;
+  double lowest_cost = std::numeric_limits<double>::max();
+
+  for (size_t k = 0; k < 256; ++k) {
+
+    std::basic_string<uint8_t> Dec =
+      bitwise_xor(reinterpret_cast<uint8_t*>(&k), 1, enc, len);
+
+    if (not metrics::is_text(Dec)) {
+      continue;
+    }
+
+    std::array<double, 256> DecFreq;
+    get_frequency_distribution(Dec, DecFreq);
+
+    double cost = metrics::L2_distance_squared(DecFreq, Freq);
+    if (cost < lowest_cost) {
+      lowest_cost = cost;
+      best_key = k;
+    }
+  }
+
+  return std::make_pair(best_key, true);
 }
 
 

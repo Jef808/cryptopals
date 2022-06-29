@@ -1,5 +1,6 @@
 #include "data_analysis/statistics.h"
 
+#include <algorithm>
 #include <cassert>
 
 namespace data {
@@ -16,8 +17,6 @@ bool CharFreq::load_data(const char *fn) {
     std::cerr << "Failed to load input file " << fn << std::endl;
     return false;
   }
-
-  std::cerr << "Successfully opened input file " << fn << std::endl;
 
   while (ifs) {
     ifs.read(&buf[0], buf_size);
@@ -57,5 +56,6 @@ bool CharFreq::write_data(const char *fn) {
   ofs << m_count.back() << std::endl;
   return true;
 }
+
 
 } // namespace data

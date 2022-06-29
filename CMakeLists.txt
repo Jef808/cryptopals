@@ -36,3 +36,5 @@ add_library(cryptopals::statistics ALIAS
   data_statistics)
 add_library(cryptopals::text_metrics ALIAS
   set_1_text_metrics)
+add_library(cryptopals::xor ALIAS
+  set_1_xor)
