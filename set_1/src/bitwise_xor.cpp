@@ -49,9 +49,24 @@ bitwise_xor(const uint8_t* key,    const size_t key_len,
 }
 
 
+/**
+ * @Return  the bool element of the returning pair indicates a
+ * possible I/O failure in the call to @data::load_character_frequencies.
+ *
+ * @Note In case the algorithm itself fails to find a candidate key, that
+ * bool will be set to true but the returned key will be the trivial 0 key.
+ *
+ * TODO Wrap this in a struct to avoid multiple calls
+ * to @data::load_character_requencies when using it multiple
+ * times for breaking repeating-key bitwise xor encodings.
+ *
+ * TODO Implement support for wider strides so that we don't
+ * have to create new strings when using it to break
+ * repeating-key bitwise xor encodings.
+ */
 std::pair<uint8_t, bool>
 break_single_byte_xor(
-  const uint8_t* enc, const size_t len, const size_t stride)
+  const uint8_t* enc, const size_t len /*, const size_t stride */)
 {
   std::array<double, 256> Freq;
   bool okay = data::load_character_frequencies(Freq);
@@ -63,12 +78,13 @@ break_single_byte_xor(
   uint8_t best_key = 0;
   double lowest_cost = std::numeric_limits<double>::max();
 
-  for (size_t k = 0; k < 256; ++k) {
+  for (size_t k = 1; k < 256; ++k) {
 
     std::basic_string<uint8_t> Dec =
       bitwise_xor(reinterpret_cast<uint8_t*>(&k), 1, enc, len);
 
     if (not metrics::is_text(Dec)) {
+
       continue;
     }
 

@@ -12,7 +12,7 @@ namespace bytes::metrics {
 /**
  * Check if all characters of string are printable or white-space.
  */
-bool is_text(const std::basic_string<uint8_t>& /* Input string */);
+bool is_text(const std::basic_string<uint8_t>& bytestring);
 
 
 /**
@@ -20,16 +20,16 @@ bool is_text(const std::basic_string<uint8_t>& /* Input string */);
  *
  * @Return Precisely $ Sum_x  |f(x) - g(x)|^2  /  256 $.
  */
-double L2_distance_squared(const std::array<double, 256>& /* Input1 */,
-                           const std::array<double, 256>& /* Input2 */);
+double L2_distance_squared(const std::array<double, 256>& function1,
+                           const std::array<double, 256>& function2);
 
 
 /**
  * Count the number of differing bits between two strings.
  */
-int hamming_distance(const uint8_t* /* string1 */,
-                     const uint8_t* /* string2 */,
-                     size_t         /* len */);
+int hamming_distance(const uint8_t* bytestring1,
+                     const uint8_t* bytestring2,
+                     size_t         length);
 
 
 inline int hamming_distance(const std::basic_string<uint8_t>& string1,

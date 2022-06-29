@@ -11,9 +11,10 @@ namespace bytes {
  * Collect the character frequency distribution of a given
  * byte string.
  */
-void get_frequency_distribution(
-  const std::basic_string<uint8_t>& /* Input byte string */,
-  std::array<double, 256>& /* Ouput */);
+void
+get_frequency_distribution(
+    const std::basic_string<uint8_t>& input_bytestring,
+    std::array<double, 256>&          output_frequency_distr);
 
 
 

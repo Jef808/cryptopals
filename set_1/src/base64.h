@@ -32,14 +32,14 @@ namespace bytes::base64 {
  *
  * The resulting string is padded so that its length is a multiple of 4.
  */
-std::string encode(const uint8_t* /* Unencoded byte stream */,
-                   const size_t   /* Size of data in bytes */);
+std::string encode(const uint8_t* p_bytestring,
+                   const size_t   length);
 
 /**
  * Transform a base64-encoded stream into a raw binary string.
  */
-std::basic_string<uint8_t> decode(const char*  /* base64 encoded char stream */,
-                                  const size_t /* Number of characters in the encoded string */);
+std::basic_string<uint8_t> decode(const char*  p_base64_string,
+                                  const size_t length);
 
 /**
  * Encode a byte string into a base64 string.

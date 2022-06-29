@@ -48,9 +48,9 @@ inline std::string bitwise_xor(const std::string& key, const std::string& msg) {
  * repeating-key xor.
  */
 std::pair<uint8_t, bool>
-break_single_byte_xor(const uint8_t* /* Input string */,
-                      const size_t   /* Input length */,
-                      const size_t   /* Stride */ = 1);
+break_single_byte_xor(const uint8_t* p_encoded_bytestring,
+                      const size_t   length /*,
+                      const size_t   stride = 1 */);
 
 } //  namespace bytes
 
