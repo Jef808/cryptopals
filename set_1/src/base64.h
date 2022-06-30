@@ -35,6 +35,9 @@ namespace bytes::base64 {
 std::string encode(const uint8_t* p_bytestring,
                    const size_t   length);
 
+// std::string encode2(const uint8_t* p_bytestring,
+//                     const size_t   length);s
+
 /**
  * Transform a base64-encoded stream into a raw binary string.
  */
@@ -46,6 +49,13 @@ std::basic_string<uint8_t> decode(const char*  p_base64_string,
  */
 inline std::string encode(const std::basic_string<uint8_t>& bytes) {
   return encode(&bytes[0], bytes.size());
+}
+
+/**
+ * Encode a regular string into a base64 string.
+ */
+inline std::string encode (const std::string& chars) {
+  return encode(reinterpret_cast<const uint8_t*>(chars.data()), chars.size());
 }
 
 /**

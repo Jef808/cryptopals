@@ -14,6 +14,11 @@ link_libraries(data_dir)
 find_package(fmt REQUIRED)
 
 #########
+# Tests #
+#########
+add_subdirectory(tests)
+
+#########
 # Set 1 #
 #########
 add_subdirectory(set_1)

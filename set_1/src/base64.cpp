@@ -1,3 +1,39 @@
+/**
+ *  Illustration:
+ *                         +--first octet--+-second octet--+--third octet--+
+ * 3 binary octets:        |7 6 5 4 3 2 1 0|7 6 5 4 3 2 1 0|7 6 5 4 3 2 1 0|
+ *        =                +-----------+---+-------+-------+---+-----------+
+ * 4 base64 digits:        |5 4 3 2 1 0|5 4 3 2 1 0|5 4 3 2 1 0|5 4 3 2 1 0|
+ *                         +--1.index--+--2.index--+--3.index--+--4.index--+
+ *
+ *
+ * Examples:
+ *
+ * Input data: 0x14fb9c03d97e
+ * Hex: 1 4 f b 9 c | 0 3 d 9 7 e
+ * 8-bit: 00010100 11111011 10011100 | 00000011 11011001 01111110
+ * 6-bit: 000101 001111 101110 011100 | 000000 111101 100101 111110
+ * Decimal: 5 15 46 28 0 61 37 62
+ * Output: F P u c A 9 l +
+ *
+ * Input data: 0x14fb9c03d9
+ * Hex: 1 4 f b 9 c | 0 3 d 9
+ * 8-bit: 00010100 11111011 10011100 | 00000011 11011001
+ * pad with 00
+ * 6-bit: 000101 001111 101110 011100 | 000000 111101 100100
+ * Decimal: 5 15 46 28 0 61 36
+ * pad with =
+ * Output: F P u c A 9 k =
+ *
+ * Input data: 0x14fb9c03
+ * Hex: 1 4 f b 9 c | 0 3
+ * 8-bit: 00010100 11111011 10011100 | 00000011
+ * pad with 0000
+ * 6-bit: 000101 001111 101110 011100 | 000000 110000
+ * Decimal: 5 15 46 28 0 48
+ * pad with = =
+ * Output: F P u c A w = =
+ */
 #include "base64.h"
 
 #include <algorithm>
@@ -5,75 +41,104 @@
 #include <sstream>
 #include <string>
 
+#include <iostream>
+
 namespace bytes::base64 {
 
 
 namespace {
 
-constexpr char base64_alphabet[65] =
-    "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-    "abcdefghijklmnopqrstuvwxyz"
-    "0123456789+/";
+/**
+ * The 64 characters in the alphabet.
+ *
+ * @Note  The array allocates one extra char
+ * for the terminal '\0'.
+ */
+constexpr const char base64_alphabet[65] =
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZ"           // 0  - 25
+    "abcdefghijklmnopqrstuvwxyz"           // 26 - 51
+    "0123456789+/";                        // 52 - 61, 62, 63
 
 /**
- * Usage: base64_index[reinterpret_cast<unsigned char*>(c)] gives
+ * The character used for padding.
+ */
+constexpr const char PAD = '=';
+
+/**
+ * Usage: base64_index[(unsigned)c] gives
  * the index of c in base64_alphabet.
  *
  * In case of c not being a base64 digit, fallback value is 0.
- *
- * Note: ')', '+' and ',' are all interpreted as the 62nd character,
- * while '*', '-' and '/' are interpreted as the 63rd character.
  */
 constexpr uint8_t base64_index[256] =
 {
-    0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
-    0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
-    0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  62, 63, 62, 62, 63,
-    52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 0,  0,  0,  0,  0,  0,
-    0,  0,  1,  2,  3,  4,  5,  6,  7,  8,  9,  10, 11, 12, 13, 14,
-    15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 0,  0,  0,  0,  63,
-    0,  26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40,
-    41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51
+    0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,    // 0  - 15
+    0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,    // 16 - 31
+    0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  62, 0,  0,  0,  63,   // 32 - 47 (+ and /)
+    52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 0,  0,  0,  0,  0,  0,    // 48 - 63 (digits)
+    0,  0,  1,  2,  3,  4,  5,  6,  7,  8,  9,  10, 11, 12, 13, 14,   // 64 - 79 (uppercase)
+    15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 0,  0,  0,  0,  0,    // 80 - 95 (uppercase)
+    0,  26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40,   // 96 -111 (lowercase)
+    41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51                        // 112-127 (lowercase)
 };
+
+constexpr bool not_base64[256] =
+{
+    1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,
+    1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,
+    1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  0,  1,  1,  1,  0,
+    0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  1,  1,  1,  1,  1,  1,
+    1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+    0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  1,  1,  1,  1,  1,
+    1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+    0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0
+};
+
 
 }  // namespace
 
 
+size_t find_invalid(const char* string, const size_t len) {
+  return std::distance(
+    string, std::find_if(string, string + len, [](auto c){ return not_base64[(unsigned)c]; }));
+}
+
+
 std::string encode(const uint8_t* data, const size_t len) {
-  const size_t olen = 4 * ((len + 2) / 3);
-  std::string ret(olen, '=');
+  const size_t olen = 4 * (len + 2) / 3;
+  std::string ret;
+  ret.reserve(olen);
+  auto out = std::back_inserter(ret);
 
-  const uint8_t* data_end = data + len;
-  char* out = &ret[0];
+  const size_t i_end = 3 * int(len / 3);
 
-  for (; data + 2 < data_end; data += 3) {
+  for (size_t i = 0; i < i_end; i += 3) {
     // Store three bytes into a 24 bits chunk at intervals of 8 bits.
-    int n = int(data[0]) << 16 | int(data[1]) << 8 | data[2];
+    int n = int(data[i]) << 16 | int(data[i+1]) << 8 | data[i+2];
 
-    // Consume the same 24 bits as four packets of 6 bits.
-    *out++ = base64_alphabet[n >> 18];
-    *out++ = base64_alphabet[n >> 12 & 0x3f];
-    *out++ = base64_alphabet[n >> 6 & 0x3f];
-    *out++ = base64_alphabet[n & 0x3f];
+    // Output those 24 bits 6 bits at a time.
+    out = base64_alphabet[n >> 18];
+    out = base64_alphabet[n >> 12 & 0x3f];
+    out = base64_alphabet[n >> 6 & 0x3f];
+    out = base64_alphabet[n & 0x3f];
   }
 
-  // 0, 1 or 2 bytes remaining in input buffer
-  // (corresponding to 0, 2, or 3 base64 digits)
-  const int n_bytes = data_end - data;
-  if (n_bytes > 0) {
-    int n = n_bytes > 1 ? int(data[0]) << 8 | data[1] : data[0];
-    const bool two_bytes = n_bytes > 1;
+  const int nb_last = len - i_end;
 
-    // Encoded first 6 bits
-    *out++ = base64_alphabet[two_bytes ? n >> 10 & 0x3f : n >> 2];
+  if (nb_last > 0) {
+    int n = nb_last == 2 ? data[i_end] << 8 | data[i_end+1] : data[i_end];
 
-    // Encoded next 6 bits or encoded
-    // last 2 bits, 0-padded on the right
-    *out++ = base64_alphabet[two_bytes ? n >> 4 & 0x3f : n << 4 & 0x3f];
+    // First 6 bits
+    out = base64_alphabet[nb_last == 2 ? n >> (2+8) & 0x3f : n >> 2 & 0x3f];
 
-    // Encoded last 4 bits, 0-padded on the right
-    // or padding character
-    *out++ = two_bytes ? base64_alphabet[n << 2 & 0x3f] : '=';
+    // [Next 6 bits] or [Last 2 bits, right-0000-padded]
+    out = base64_alphabet[nb_last == 2 ? n >> 4 & 0x3f : n << 4 & 0x3f];
+
+    // [Last 4 bits, right-00-padded] or [Padding character]
+    out = nb_last == 2 ? base64_alphabet[n << 2 & 0x3f] : PAD;
+
+    // Padding character
+    out = PAD;
   }
 
   return ret;
@@ -81,6 +146,13 @@ std::string encode(const uint8_t* data, const size_t len) {
 
 
 std::basic_string<uint8_t> decode(const char* string, const size_t len) {
+  {
+    size_t inv = find_invalid(string, len);
+    if (inv < len) {
+      throw std::runtime_error("base64::decode: Invalid input @ " + std::to_string(inv));
+    }
+  }
+
   std::basic_string<uint8_t> ret;
   if (len == 0) {
     return ret;
