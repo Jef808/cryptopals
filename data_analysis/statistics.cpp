@@ -11,7 +11,7 @@ CharFreq::CharFreq(std::array<int, 256> &count) : m_count{count}, n_chars{0} {}
 
 bool CharFreq::load_data(const char *fn) {
   std::ifstream ifs{fn};
-  const size_t buf_size = 2 * 1024 * 1024;
+  const size_t buf_size = 6 * 1024 * 1024;
   std::string buf;
   buf.resize(buf_size, '\0');
   if (not ifs) {

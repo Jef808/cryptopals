@@ -6,3 +6,10 @@ target_link_libraries(test_base64 PUBLIC
   cryptopals::bytes)
 target_compile_definitions(test_base64 PRIVATE
   "-DTESTS_DIR=\"${cryptopals_TESTS_DIR}\"")
+
+
+add_executable(test_hamming_distance
+  test_hamming.cc)
+
+target_link_libraries(test_hamming_distance PUBLIC
+  cryptopals::bytes)

@@ -13,7 +13,8 @@ namespace data {
 
 bool load_character_frequencies(std::array<double, 256>& freqs)
 {
-  const std::string fn = DATA_DIR "/harry_potter/character_frequency.csv";
+  const char* fn =
+    DATA_DIR "/harry_potter/character_frequency.csv";
 
   auto [counter_vec, okay] = read_csv<int>(fn, true);
   if (not okay) {
@@ -27,17 +28,11 @@ bool load_character_frequencies(std::array<double, 256>& freqs)
 
   for (size_t i = 0; i < counter.size(); ++i) {
 
-    // Don't count non-printable characters towards the total
-    if (not std::isprint(i)) {
-      freqs[i] = 0.0;
-      continue;
-    }
-
-    // Store all other character data
+    // Store all character data
     total += freqs[i] = counter[i];
   }
 
-  // Divide by computed total number of (printable)
+  // Divide by computed total number of
   // characters to get the frequencies
   std::transform(freqs.begin(), freqs.end(), freqs.begin(), [total](auto v) {
     return v / total;
