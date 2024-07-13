@@ -66,41 +66,30 @@ constexpr const char PAD = '=';
 
 /**
  * Usage: base64_index[(unsigned)c] gives
- * the index of c in base64_alphabet.
+ * the 1-based index of c in base64_alphabet.
  *
- * In case of c not being a base64 digit, fallback value is 0.
+ * In case of c not being a base64 digit, invalid value is 0.
  */
 constexpr uint8_t base64_index[256] =
 {
-    0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,    // 0  - 15
-    0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,    // 16 - 31
-    0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  62, 0,  0,  0,  63,   // 32 - 47 (+ and /)
-    52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 0,  0,  0,  0,  0,  0,    // 48 - 63 (digits)
-    0,  0,  1,  2,  3,  4,  5,  6,  7,  8,  9,  10, 11, 12, 13, 14,   // 64 - 79 (uppercase)
-    15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 0,  0,  0,  0,  0,    // 80 - 95 (uppercase)
-    0,  26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40,   // 96 -111 (lowercase)
-    41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51                        // 112-127 (lowercase)
+    0,   0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,   // 0  - 15
+    0,   0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,   // 16 - 31
+    0,   0,  0,  0,  0,  0,  0,  0,  0,  0,  0, 63,  0,  0,  0, 64,   // 32 - 47 (+ and /)
+    53, 54, 55, 56, 57, 58, 59, 60, 61, 62,  0,  0,  0,  0,  0,  0,   // 48 - 63 (digits)
+    0,   1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15,   // 64 - 79 (uppercase)
+    16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26,  0,  0,  0,  0,  0,   // 80 - 95 (uppercase)
+    0,  27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41,   // 96 -111 (lowercase)
+    42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52                        // 112-127 (lowercase)
 };
-
-constexpr bool not_base64[256] =
-{
-    1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,
-    1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,
-    1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  0,  1,  1,  1,  0,
-    0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  1,  1,  1,  1,  1,  1,
-    1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
-    0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  1,  1,  1,  1,  1,
-    1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
-    0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0
-};
-
 
 }  // namespace
 
 
 size_t find_invalid(const char* string, const size_t len) {
   return std::distance(
-    string, std::find_if(string, string + len, [](auto c){ return not_base64[(unsigned)c]; }));
+    string, std::find_if(string, string + len, [](auto c){
+      return base64_index[(unsigned)c] == 0 and c != PAD;
+    }));
 }
 
 
@@ -147,9 +136,12 @@ std::string encode(const uint8_t* data, const size_t len) {
 
 std::basic_string<uint8_t> decode(const char* string, const size_t len) {
   {
-    size_t inv = find_invalid(string, len);
+    auto inv = find_invalid(string, len);
     if (inv < len) {
-      throw std::runtime_error("base64::decode: Invalid input @ " + std::to_string(inv));
+      std::stringstream ss;
+      auto invalid_char = string + inv;
+      ss << "base64::decode: Invalid char at index " << inv << ": " << *invalid_char;
+      throw std::runtime_error(ss.str());
     }
   }
 
@@ -175,7 +167,7 @@ std::basic_string<uint8_t> decode(const char* string, const size_t len) {
 
   for (; in < in_last_packet; in += 4) {
     // Store four base64 digits into a 24 bits chunk
-    int n = base64_index[in[0]] << 18 | base64_index[in[1]] << 12 | base64_index[in[2]] << 6 | base64_index[in[3]];
+    int n = (base64_index[in[0]]-1) << 18 | (base64_index[in[1]]-1) << 12 | (base64_index[in[2]]-1) << 6 | (base64_index[in[3]]-1);
 
     // Consume that chunk of 24 bits as 3 bytes
     *out++ = n >> 16;
@@ -185,14 +177,14 @@ std::basic_string<uint8_t> decode(const char* string, const size_t len) {
 
   // The last (short) packet
   if (pad1) {
-    int n = base64_index[in[0]] << 18 | base64_index[in[1]] << 12;
+    int n = (base64_index[in[0]]-1) << 18 | (base64_index[in[1]]-1) << 12;
 
     // Have at least one extra byte for two chars
     *out++ = n >> 16;
 
     // Construct second extra byte with third char if needed
     if (pad2) {
-      n |= base64_index[in[2]] << 6;
+      n |= (base64_index[in[2]]-1) << 6;
       *out++ = n >> 8 & 0xff;
     }
   }

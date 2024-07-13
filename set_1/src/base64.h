@@ -48,7 +48,7 @@ std::basic_string<uint8_t> decode(const char*  p_base64_string,
  * Encode a byte string into a base64 string.
  */
 inline std::string encode(const std::basic_string<uint8_t>& bytes) {
-  return encode(&bytes[0], bytes.size());
+  return encode(bytes.data(), bytes.size());
 }
 
 /**
@@ -62,7 +62,7 @@ inline std::string encode (const std::string& chars) {
  * Decode a base64 string to a byte string.
  */
 inline std::basic_string<uint8_t> decode(const std::string& string) {
-  return decode(&string[0], string.size());
+  return decode(string.data(), string.size());
 }
 
 
