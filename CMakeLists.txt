@@ -13,6 +13,17 @@ link_libraries(data_dir)
 
 find_package(fmt REQUIRED)
 
+#############
+# Utilities #
+#############
+add_subdirectory(utils)
+link_libraries(cryptopals::printer)
+
+#################
+# Data analysis #
+#################
+add_subdirectory(data_analysis)
+
 #########
 # Tests #
 #########
@@ -22,24 +33,3 @@ add_subdirectory(tests)
 # Set 1 #
 #########
 add_subdirectory(set_1)
-
-#################
-# Data analysis #
-#################
-add_subdirectory(data_analysis)
-
-###################
-# Library aliases #
-###################
-add_library(cryptopals::io_utils ALIAS
-  io_utils)
-add_library(cryptopals::data_utils ALIAS
-  data_utils)
-add_library(cryptopals::bytes ALIAS
-  set_1_bytes)
-add_library(cryptopals::statistics ALIAS
-  data_statistics)
-add_library(cryptopals::text_metrics ALIAS
-  set_1_text_metrics)
-add_library(cryptopals::xor ALIAS
-  set_1_xor)

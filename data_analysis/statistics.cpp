@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cassert>
+#include <cstdint>
 
 namespace data {
 
@@ -31,7 +32,7 @@ bool CharFreq::load_data(const char *fn) {
     std::cerr << "Read " << chars_read << " chars into buffer" << std::endl;
 
     for (size_t i = 0; i < chars_read; ++i) {
-      uint8_t c = static_cast<uint8_t>(buf[i]);
+      auto c = static_cast<uint8_t>(buf[i]);
       ++m_count[c];
     }
     n_chars += chars_read;

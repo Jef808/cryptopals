@@ -1,4 +1,8 @@
-#include <data_analysis/statistics.h>
+/**
+/* Generate the character frequency data from the Harry Potter books
+*/
+
+#include "data_analysis/statistics.h"
 
 #include <array>
 #include <cassert>

@@ -1,4 +1,5 @@
 #include "bitwise_xor.h"
+#include "utils/printer.h"
 
 #include <iostream>
 #include <fstream>
@@ -26,17 +27,22 @@ int main(int argc, char *argv[]) {
         ifs >> expected_result;
     }
 
-    std::cout << "\nbitwise xor-ing string\n" << "  " << string
-              << "\nagainst key\n" << "  " << key << "..." << std::endl;
+    cryptopals::print_bold(std::cout, "Inputs:\n  ")
+      << string;
+    cryptopals::print_bold(std::cout, "\nand\n  ")
+      << key << std::endl;
 
-    auto res = bytes::bitwise_xor(key, string);
+    auto result = bytes::bitwise_xor(key, string);
 
-    std::cout << "Result:\n  "
-              << res
-              << "\nExpected result:\n  "
-              << expected_result
-              << "\n\n"
-              << (res == expected_result ? "SUCCESS!" : "FAIL") << std::endl;
+    cryptopals::print_bold(std::cout, "\nBitwise-XOR:\n  ")
+      << result << std::endl;
 
-    return EXIT_SUCCESS;
+    if (result == expected_result) {
+      cryptopals::print_success(std::cout) << std::endl;
+      return EXIT_SUCCESS;
+    } else {
+      cryptopals::print_failure(std::cout, "\nExpected result:\n  ")
+        << expected_result << std::endl;
+      return EXIT_FAILURE;
+    }
 }
