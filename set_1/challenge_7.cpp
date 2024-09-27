@@ -57,16 +57,15 @@ int main(int argc, char* argv[]) {
     std::basic_string<uint8_t> enc = bytes::base64::decode(string.data(), string.size());
 
     unsigned char key[16 + 1] = {0};
-    // unsigned char plaintext[enc.size() + 1] = {0};
 
     std::strncpy(reinterpret_cast<char*>(key), key_value.c_str(), key_value.size());
-    // std::strncpy(reinterpret_cast<char*>(plaintext), enc.c_str(), enc.size());
 
     float n_blocks_f = enc.size() / 16;
     int n_blocks = n_blocks_f;
 
     if (n_blocks < n_blocks_f) {
-        std::cerr << "Need padding!" << std::endl;
+        std::cerr << "The last encoded block requires padding!" << std::endl;
+        return EXIT_FAILURE;
     }
 
     for (int i = 0; i < n_blocks; ++i) {

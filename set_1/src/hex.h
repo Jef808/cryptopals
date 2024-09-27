@@ -22,7 +22,7 @@ namespace bytes::hex {
 
 
 /**
- * Transform binary data into a base64-encoded string.
+ * Transform binary data into a hex-encoded string.
  *
  * The resulting string is padded so that its length is a multiple of 4.
  */
@@ -30,20 +30,20 @@ std::string encode(const uint8_t* /* Unencoded byte stream */,
                    const size_t   /* Size of data in bytes */);
 
 /**
- * Transform a base64-encoded stream into a raw binary string.
+ * Transform a hex-encoded stream into a raw binary string.
  */
 std::basic_string<uint8_t> decode(const char*  /* base64 encoded char stream */,
                                   const size_t /* Number of characters in the encoded string */);
 
 /**
- * Encode a byte string into a base64 string.
+ * Encode a byte string into a hex string.
  */
 inline std::string encode(const std::basic_string<uint8_t>& bytes) {
   return encode(&bytes[0], bytes.size());
 }
 
 /**
- * Decode a base64 string to a byte string.
+ * Decode a hex string to a byte string.
  */
 inline std::basic_string<uint8_t> decode(const std::string& string) {
   return decode(&string[0], string.size());

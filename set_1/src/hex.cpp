@@ -53,7 +53,7 @@ std::string encode(const uint8_t* bytes, const size_t len) {
 }
 
 /**
- * Transform a base64-encoded stream into a raw binary string.
+ * Transform a hex-encoded stream into a raw binary string.
  */
 std::basic_string<uint8_t> decode(const char* string, const size_t len) {
     std::basic_string<uint8_t> ret;

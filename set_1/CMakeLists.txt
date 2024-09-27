@@ -91,6 +91,11 @@ add_executable(challenge_7
 target_link_libraries(challenge_7
   cryptopals::bytes)
 
+add_executable(challenge_8
+  challenge_8.cpp
+  src/aes.cpp)
+target_link_libraries(challenge_8
+  cryptopals::bytes)
 
 add_executable(test_aes
   src/test_aes.cc

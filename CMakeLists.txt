@@ -44,3 +44,8 @@ add_subdirectory(tests)
 # Set 1 #
 #########
 add_subdirectory(set_1)
+
+#########
+# Set 2 #
+#########
+add_subdirectory(set_2)
