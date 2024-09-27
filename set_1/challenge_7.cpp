@@ -1,8 +1,10 @@
 #include "aes.h"
+#include "bytes.h"
 #include <argparse/argparse.hpp>
 #include <cstring>
 #include <iomanip>
 #include <iostream>
+#include <fstream>
 
 using namespace aes;
 
@@ -19,7 +21,7 @@ int main(int argc, char* argv[]) {
 
     parser.add_argument("-k")
         .help("A 16 character key for encoding plaintext");
-    parser.add_argument("input");
+    parser.add_argument("file");
 
     try {
         parser.parse_args(argc, argv);
@@ -31,28 +33,51 @@ int main(int argc, char* argv[]) {
     }
 
     const auto& key_value = parser.get<std::string>("-k");
-    const auto& plaintext_value = parser.get<std::string>("input");
+    const auto& input_file = parser.get<std::string>("file");
+
+    std::ifstream ifs{input_file};
+    if (not ifs) {
+        std::cerr << "Failed to open input file" << std::endl;
+        return EXIT_FAILURE;
+    }
+
+    std::string buf;
+    std::stringstream ss;
+    while (std::getline(ifs, buf)) {
+        ss << buf;
+    }
+    std::string string = ss.str();
+
+    auto newline = std::find(string.begin(), string.end(), '\n');
+    if (newline != string.end()) {
+        std::cerr << "Found newline character in input string" << std::endl;
+        return EXIT_FAILURE;
+    }
+
+    std::basic_string<uint8_t> enc = bytes::base64::decode(string.data(), string.size());
+    std::cout << "\033[1mEncoded string size:\033[0m\n  " << enc.size() << " bytes." << std::endl;
 
     unsigned char key[16 + 1] = {0};
-    unsigned char plaintext[plaintext_value.size() + 1] = {0};
+    // unsigned char plaintext[enc.size() + 1] = {0};
 
     std::strncpy(reinterpret_cast<char*>(key), key_value.c_str(), key_value.size());
-    std::strncpy(reinterpret_cast<char*>(plaintext), plaintext_value.c_str(), plaintext_value.size());
+    // std::strncpy(reinterpret_cast<char*>(plaintext), enc.c_str(), enc.size());
 
-    std::cout << "\nPlaintext: " << plaintext << std::endl;
-    std::cout << "(hex):     ";
-    printHex(plaintext, 16);
+    float n_blocks_f = enc.size() / 16;
+    int n_blocks = n_blocks_f;
 
-    std::cout << "\nKey:       " << key << std::endl;
+    if (n_blocks < n_blocks_f) {
+        std::cerr << "Need padding!" << std::endl;
+    }
 
-    aesEncode(plaintext, key);
-    std::cout << "\nEncrypted: ";
-    printHex(plaintext, 16);
+    for (int i = 0; i < n_blocks; ++i) {
+        aesDecode(enc.data() + 16 * i, key);
+    }
 
-    aesDecode(plaintext, key);
-    std::cout << "\nDecrypted: " << plaintext << std::endl;
-    std::cout << "(hex):     ";
-    printHex(plaintext, 16);
+    for (auto c : enc) {
+        std::cout << c;
+    }
+    std::cout << std::endl;
 
     return 0;
 }

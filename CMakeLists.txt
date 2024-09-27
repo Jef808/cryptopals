@@ -27,6 +27,17 @@ add_subdirectory(data_analysis)
 #########
 # Tests #
 #########
+enable_testing()
+include(FetchContent)
+
+# Fetch Catch2 library
+FetchContent_Declare(
+  Catch2
+  GIT_REPOSITORY https://github.com/catchorg/Catch2.git
+  GIT_TAG        v3.6.0
+)
+FetchContent_MakeAvailable(Catch2)
+
 add_subdirectory(tests)
 
 #########

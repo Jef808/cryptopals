@@ -12,7 +12,9 @@ add_library(bytes STATIC
   src/metrics.h
   src/metrics.cpp
   src/character_frequency.h
-  src/character_frequency.cpp)
+  src/character_frequency.cpp
+  src/aes.h
+  src/aes.cpp)
 
 target_include_directories(bytes PUBLIC
   ${CMAKE_CURRENT_SOURCE_DIR}/src)
@@ -82,3 +84,19 @@ add_executable(challenge_6
   challenge_6.cpp)
 target_link_libraries(challenge_6
   cryptopals::bytes)
+
+add_executable(challenge_7
+  challenge_7.cpp
+  src/aes.cpp)
+target_link_libraries(challenge_7
+  cryptopals::bytes)
+
+
+add_executable(test_aes
+  src/test_aes.cc
+  src/aes.cpp)
+target_link_libraries(test_aes PRIVATE Catch2::Catch2WithMain)
+
+include(CTest)
+include(Catch)
+catch_discover_tests(test_aes)
