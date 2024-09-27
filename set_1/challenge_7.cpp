@@ -55,7 +55,6 @@ int main(int argc, char* argv[]) {
     }
 
     std::basic_string<uint8_t> enc = bytes::base64::decode(string.data(), string.size());
-    std::cout << "\033[1mEncoded string size:\033[0m\n  " << enc.size() << " bytes." << std::endl;
 
     unsigned char key[16 + 1] = {0};
     // unsigned char plaintext[enc.size() + 1] = {0};

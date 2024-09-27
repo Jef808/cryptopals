@@ -84,7 +84,6 @@ break_single_byte_xor(
       bitwise_xor(reinterpret_cast<uint8_t*>(&k), 1, enc, len);
 
     if (not metrics::is_text(Dec)) {
-
       continue;
     }
 

@@ -16,9 +16,17 @@ bool is_text(const std::basic_string<uint8_t>& bytestring);
 
 
 /**
+ * Compute the dot product between two mappings
+ *
+ * @Return Precisely $ \Sum_x  f(x) \cdot g(x) $.
+ */
+double dot(const std::array<double, 256>& function1,
+           const std::array<double, 256>& function2);
+
+/**
  * Compute the L2 distance squared between two mappings
  *
- * @Return Precisely $ Sum_x  |f(x) - g(x)|^2  /  256 $.
+ * @Return Precisely $ \Sum_x |f(x) - g(x)|^2 / 256 $.
  */
 double L2_distance_squared(const std::array<double, 256>& function1,
                            const std::array<double, 256>& function2);

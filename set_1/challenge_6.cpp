@@ -1,36 +1,18 @@
-/**
- * FIXME: It is very possible that the only reason this doesn't
- * work is that the base64 decoding has a bug... The other
- * challenges only tested for base64 encoding!
- */
-
 #include "bitwise_xor.h"
 #include "bytes.h"
 #include "metrics.h"
+#include "data_analysis/load_character_frequencies.h"
 
 #include <algorithm>
+#include <array>
 #include <cassert>
 #include <fstream>
 #include <iostream>
 #include <limits>
 #include <numeric>
 #include <string>
+#include <sstream>
 #include <vector>
-
-/**
- * Compute the number of bits differing between the first two chunks
- * of length @keysize.
- *
- * @Note  The result is normalized by dividing by @keysize.
- */
-double hamming_test(const std::basic_string<uint8_t> &s, size_t keysize, bool twice=false) {
-  double result = bytes::metrics::hamming_distance(&s[0], &s[keysize], keysize);
-  if (twice) {
-      double result2 = bytes::metrics::hamming_distance(&s[2*keysize], &s[3*keysize], keysize);
-      result = (result + result2) / 2;
-  }
-  return result / keysize;
-}
 
 /**
  * We compare larger and larger contiguous chunks
@@ -44,12 +26,9 @@ double hamming_test(const std::basic_string<uint8_t> &s, size_t keysize, bool tw
  */
 std::vector<size_t> discover_keysize(const std::basic_string<uint8_t> &enc,
                                      const size_t n_sizes=1,
-                                     const size_t max_size=40,
-                                     const bool twice=false)
+                                     const size_t max_size=40)
 {
-  assert(n_sizes <= max_size - 1
-         && "More sizes are asked for than the number of sizes tested for");
-  assert(enc.size() >= 2 * max_size * (2*twice)
+  assert(enc.size() >= 4 * max_size
          && "Our discover_keysize will overflow");
 
   std::vector<size_t> keysizes(max_size - 1);
@@ -58,132 +37,153 @@ std::vector<size_t> discover_keysize(const std::basic_string<uint8_t> &enc,
   results.reserve(max_size - 1);
 
   for (auto ks : keysizes) {
-    results.push_back(hamming_test(enc, ks, twice));
-  }
+    std::basic_string_view<uint8_t> sv1(enc.data(), ks);
+    std::basic_string_view<uint8_t> sv2(enc.data() + ks, ks);
+    std::basic_string_view<uint8_t> sv3(enc.data() + 2*ks, ks);
+    std::basic_string_view<uint8_t> sv4(enc.data() + 3*ks, ks);
+    std::basic_string_view<uint8_t> sv5(enc.data() + 4*ks, ks);
 
+    double distance12 = bytes::metrics::hamming_distance(sv1.data(), sv2.data(), ks);
+    double distance13 = bytes::metrics::hamming_distance(sv1.data(), sv3.data(), ks);
+    double distance14 = bytes::metrics::hamming_distance(sv1.data(), sv4.data(), ks);
+    double distance15 = bytes::metrics::hamming_distance(sv1.data(), sv5.data(), ks);
+    double distance23 = bytes::metrics::hamming_distance(sv2.data(), sv3.data(), ks);
+    double distance24 = bytes::metrics::hamming_distance(sv2.data(), sv4.data(), ks);
+    double distance25 = bytes::metrics::hamming_distance(sv2.data(), sv5.data(), ks);
+    double distance34 = bytes::metrics::hamming_distance(sv3.data(), sv4.data(), ks);
+    double distance35 = bytes::metrics::hamming_distance(sv3.data(), sv5.data(), ks);
+    double distance45 = bytes::metrics::hamming_distance(sv4.data(), sv5.data(), ks);
+
+    double avg_distance =
+      (distance12 + distance13 + distance14 + distance15 + distance23 +
+       distance24 + distance25 + distance34 + distance35 + distance45) / 10.0;
+    results.push_back(avg_distance / ks);
+  }
   std::partial_sort(keysizes.begin(), keysizes.begin() + n_sizes, keysizes.end(),
-                    [&results](const auto& a, const auto& b){ return results[a - 2] < results[b - 2]; });
-
-  for (size_t s : keysizes) {
-      std::cout << "Keysize " << s << ", Hamming test score: " << results[s - 2] << '\n';
-  }
-
-  std::cout << std::endl;
-
+                    [&results](auto a, auto b){
+                      return results[a - 2] < results[b - 2];
+                    });
   keysizes.resize(n_sizes);
   return keysizes;
 }
 
 
 int main(int argc, char *argv[]) {
-
   const char *fn = DATA_DIR "/set_1/challenge_6.txt";
   std::ifstream ifs{fn};
-
   if (not ifs) {
     std::cerr << "Failed to open input file" << std::endl;
     return EXIT_FAILURE;
   }
 
   std::string buf;
-  buf.reserve(4096);
-  ifs.read(&buf[0], 4096);
-  int len = ifs.gcount();
-
-  std::basic_string<uint8_t> enc = bytes::base64::decode(&buf[0], len);
-
-  const size_t n_keysizes = 6;
-
-  // FIXME: There is a bug in one of my base64 decode/encode methods,
-  // after decoding and reencoding, the single '=' padding character
-  // is replaced by 'AA'
-  //
-  // Test
-  // buf = bytes::base64::encode(enc);
-  // std::cout << buf << std::endl;
-
-  // Get the size of the key using hamming distance
-  std::vector<size_t> keysizes = discover_keysize(enc, n_keysizes);
-  std::cout << "Most likely keysizes \033[1m: ";
-  for (auto ks : keysizes) {
-      std::cout << ks << ' ';
+  buf.reserve(256);
+  std::stringstream ss;
+  while (std::getline(ifs, buf)) {
+    ss << buf;
   }
-  std::cout << "\033[0m" << std::endl;
+  std::string string = ss.str();
 
-  std::basic_string<uint8_t> Key;
-  bool searching = true;
+  auto newline = std::find(string.begin(), string.end(), '\n');
+  if (newline != string.end()) {
+    std::cout << "Found newline character\n" << std::endl;
+    return EXIT_FAILURE;
+  }
 
-  // For each keysize we want to try
-  for (size_t k = 0; k < n_keysizes; ++k) {
-      // TODO Keep all keys found and only return once we have compared them all
-      if (not searching) {
-          break;
-      }
+  std::basic_string<uint8_t> enc = bytes::base64::decode(string.data(), string.size());
+  std::cout << "\033[1mEncoded string size:\033[0m\n  " << enc.size() << " bytes." << std::endl;
 
-      size_t keysize = keysizes[k];
-      std::cout << "Keysize: \033[1m" << keysize << "\033[0m" << std::endl;
+  // Get likely sizes of the key using the hamming distance
+  // of consecutive chunks of the encoded string.
+  const size_t n_keysizes = 6;
+  std::vector<size_t> keysizes = discover_keysize(enc, n_keysizes);
 
-      Key.clear();
+  std::array<double, 256> freqs;
+  data::load_character_frequencies(freqs);
 
-      // For each character of the key
+  // For each keysize, collect the encoded bytes which would
+  // have been encoded using the same character of the key.
+  // We can then break the single-byte xor encoding of that
+  // group of bytes to find the character of the key.
+  std::basic_string<uint8_t> best_key;
+  double best_key_score = std::numeric_limits<double>::min();
+  for (size_t keysize : keysizes) {
+      double key_score = 0.0;
+      std::basic_string<uint8_t> key;
+
+      // For each possible byte value, xor the group with that byte
+      // and compare the resulting character frequency with the expected
+      // frequency of characters in the English language.
       for (size_t i = 0; i < keysize; ++i) {
-
-          // Group together all bytes of the string that are encoded using that character
           std::basic_string<uint8_t> group;
-
           for (size_t p = i; p < enc.size(); p += keysize) {
               group.push_back(enc[p]);
           }
-
-          std::cout << "Group: " << bytes::hex::encode(group) << std::endl;
-
-          // Since our method for breaking single-byte binary-wise xor encodings
-          // relies only on character frequency, it is perfectly applicable here
-          // and we can use it to retrieve the character used to encode that group,
-          // thus providing us with the next character of the hidden key.
-          auto [kc, ok] = bytes::break_single_byte_xor(group.data(), group.size());
-
-          // TODO Remove this possible I/O error by doing the statistics fetching at init
-          if (not ok) {
-              std::cerr << "I/O error during call to break_single_byte_xor" << std::endl;
-              return EXIT_FAILURE;
+          int best_byte = -1;
+          double best_byte_score = std::numeric_limits<double>::min();
+          for (int _b = 1; _b < 256; ++_b) {
+              uint8_t b = static_cast<uint8_t>(_b);
+              if (not (std::isprint(b) or std::isspace(b))) {
+                continue;
+              }
+              bool search = true;
+              std::array<double, 256> counts;
+              counts.fill(0.0);
+              std::basic_string<uint8_t> xor_group = bytes::bitwise_xor(&b, 1, group.data(), group.size());
+              for (auto c : xor_group) {
+                if (not (std::isprint(c) or std::isspace(c))) {
+                  search = false;
+                  break;
+                }
+                counts[c] += 1;
+              }
+              if (not search) {
+                continue;
+              }
+              double score = bytes::metrics::dot(counts, freqs) / xor_group.size();
+              if (score > best_byte_score) {
+                  best_byte_score = score;
+                  best_byte = b;
+              }
           }
-
-          // In case the algorithm didn't find a viable non-trivial key
-          // TODO Implement a more robust way for the algorithm to indicate it failed
-          if (kc == 0) {
-              std::cout << "Giving up on character " << Key.size() << std::endl;
-              break;
+          if (best_byte == -1) {
+            key.clear();
+            break;
           }
-
-          Key.push_back(kc);
-          std::cout << "Found character " << Key.size() << " of " << keysize << std::endl;
-
-          if (Key.size() == keysize) {
-              searching = false;
-          }
+          key.push_back(best_byte);
+          key_score += best_byte_score;
+      }
+      if (key.empty()) {
+        continue;
+      }
+      key_score /= keysize;
+      if (key_score > best_key_score) {
+          best_key = key;
+          best_key_score = key_score;
       }
   }
 
-  if (Key.empty()) {
-      std::cout << "Failed to find a key" << std::endl;
-      return EXIT_FAILURE;
+  if (best_key.empty()) {
+    std::cout << "\nFailed to find a key"
+      << "\nThe cypher text may not have been encoded with repeating key xor"
+      << std::endl;
+    return EXIT_FAILURE;
   }
 
-  std::cout << "Key: \033[1m";
-  for (uint8_t b : Key) {
-    std::cout << (unsigned)b;
-  }
-  std::cout << "\033[0m" << std::endl;
-
-  // Decode the message.
-  auto Dec = bytes::bitwise_xor(Key.data(), Key.size(), enc.data(), enc.size());
-
-  std::cout << "Output string:\n\n  \033[1m";
-  for (auto b : Dec) {
+  std::cout << "\n\033[1mKey:\033[0m\n  ";
+  for (uint8_t b : best_key) {
       std::cout << b;
   }
-  std::cout << "\033[0m\n" << std::endl;
+  std::cout << std::endl;
+
+  // Decode the message.
+  auto dec = bytes::bitwise_xor(best_key.data(), best_key.size(), enc.data(), enc.size());
+
+  std::cout << "\n\033[1mDecoded content:\033[0m\n  ";
+  for (auto b : dec) {
+      std::cout << b;
+  }
+  std::cout << std::endl;
 
   return EXIT_SUCCESS;
 }
